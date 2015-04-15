@@ -48,7 +48,7 @@ public class PlayPingPong implements Runnable {
      * algorithm begins.
      */
     // @@ TODO - you fill in here.
-    private volatile CyclicBarrier mCyclicBarrier = new CyclicBarrier(2);
+    private CyclicBarrier mCyclicBarrier = new CyclicBarrier(2);
 
     /**
      * Implements the concurrent ping/pong algorithm using a pair of
@@ -97,11 +97,12 @@ public class PlayPingPong implements Runnable {
             } else if (mMyType.equals(PingPong.PONG)) {
                 mPongHandler = new Handler(this);
             }
+            int count = 0;
 
             try {
                 // Wait for both Threads to initialize their Handlers.
                 // @@ TODO - you fill in here.
-                mCyclicBarrier.await();
+                count = mCyclicBarrier.await();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -111,10 +112,12 @@ public class PlayPingPong implements Runnable {
             // Handler is the "obj" to use for the reply and (2)
             // sending the Message to the PING_THREAD's Handler.
             // @@ TODO - you fill in here.
-            Message message = mPingHandler.obtainMessage();
-            message.setTarget(mPingHandler);
-            message.obj = mPongHandler;
-            mPingHandler.sendMessage(message);
+            if (count == 0) {
+                Message message = new Message();
+                message.setTarget(mPingHandler);
+                message.obj = mPongHandler;
+                mPingHandler.sendMessage(message);
+            }
         }
 
         /**
@@ -127,8 +130,7 @@ public class PlayPingPong implements Runnable {
             // with all its iterations yet.
             // @@ TODO - you fill in here, replacing "true" with the
             // appropriate code.
-            if (mIterationsCompleted < mMaxIterations) {
-                mIterationsCompleted ++;
+            if (++mIterationsCompleted <= mMaxIterations) {
                 if (reqMsg.getTarget().equals(mPingHandler)) {
                     mOutputStrategy.print("\n" + "PING (" + mIterationsCompleted + ")");
                 } else
@@ -193,15 +195,20 @@ public class PlayPingPong implements Runnable {
         // @@ TODO - you fill in here.
         try {
             mPingThread.join();
+            mOutputStrategy.print("\n" + "Done!");
             mPongThread.join();
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        try {
             mCyclicBarrier.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (BrokenBarrierException e) {
             e.printStackTrace();
         }
-
         // Let the user know we're done.
-        mOutputStrategy.print("Done!");
+//        mOutputStrategy.print("Done!");
     }
 }
